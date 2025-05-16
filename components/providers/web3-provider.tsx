@@ -49,17 +49,25 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   // Function to initialize contracts
   const initializeContracts = async (signer: ethers.Signer) => {
     try {
+      console.log("Initializing contracts with signer:", await signer.getAddress());
+      
+      // Create interfaces from ABIs for proper type checking
+      const marketplaceInterface = new ethers.Interface(NFT_MARKETPLACE_ABI);
+      const nftInterface = new ethers.Interface(NFT_COLLECTION_ABI);
+      
       const marketplaceContract = new ethers.Contract(
         NFT_MARKETPLACE_ADDRESS,
-        NFT_MARKETPLACE_ABI,
+        marketplaceInterface,
         signer
       );
+      
       const nftContract = new ethers.Contract(
         NFT_COLLECTION_ADDRESS,
-        NFT_COLLECTION_ABI,
+        nftInterface,
         signer
       );
 
+      console.log("Contracts initialized successfully");
       setMarketplaceContract(marketplaceContract);
       setNftContract(nftContract);
     } catch (error) {

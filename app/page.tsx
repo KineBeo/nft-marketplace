@@ -38,7 +38,19 @@ export default function Home() {
       setError(null);
       console.log("Loading marketplace NFTs...");
       
-      const items = await loadMarketplaceItems();
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<NFT[]>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Loading marketplace items timed out. Please try again."));
+        }, 15000); // 15 seconds timeout
+      });
+      
+      // Race the loadMarketplaceItems against the timeout
+      const items = await Promise.race([
+        loadMarketplaceItems(),
+        timeoutPromise
+      ]);
+      
       setNfts(items);
       
       console.log(`Loaded ${items.length} marketplace NFTs`);
@@ -46,7 +58,18 @@ export default function Home() {
     } catch (err) {
       console.error("Error loading marketplace NFTs:", err);
       setLoadingState("error");
-      setError(err instanceof Error ? err.message : "Failed to load marketplace NFTs");
+      
+      // Better error messages for users
+      const errorMessage = err instanceof Error 
+        ? err.message
+        : "Failed to load marketplace NFTs";
+        
+      // Check for specific error messages
+      if (errorMessage.includes('BAD_DATA') && errorMessage.includes('fetchAvailableMarketItems')) {
+        setError("No marketplace items available. The marketplace might be empty.");
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsRefreshing(false);
     }

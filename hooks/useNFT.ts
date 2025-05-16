@@ -35,8 +35,21 @@ export function useNFT() {
       console.log("Loading available items from marketplace...");
       
       // Get all available items from the marketplace
-      const items = await marketplaceContract.fetchAvailableMarketItems();
-      console.log("Available marketplace items:", items);
+      let items;
+      try {
+        items = await marketplaceContract.fetchAvailableMarketItems();
+        console.log("Available marketplace items:", items);
+      } catch (error) {
+        console.error("Error calling fetchAvailableMarketItems:", error);
+        // Handle case where no items are available
+        return [];
+      }
+      
+      // If no items returned or empty array
+      if (!items || items.length === 0) {
+        console.log("No marketplace items available");
+        return [];
+      }
       
       // Create a map of token URIs to reduce duplicate fetch calls
       const tokenURIPromises: Record<string, Promise<string>> = {};
@@ -159,10 +172,72 @@ export function useNFT() {
       const tokenURIs = await Promise.all(tokenURIPromises);
       console.log("Fetched all token URIs");
       
-      // Batch all metadata requests
-      const metadataPromises = tokenURIs.map(uri => 
-        fetch(uri).then(res => res.json())
-      );
+      // Batch all metadata requests with improved error handling
+      const metadataPromises = tokenURIs.map((uri, index) => {
+        // Check if URI is valid before fetching
+        if (!uri || typeof uri !== 'string') {
+          console.warn("Invalid token URI:", uri);
+          return Promise.resolve({ 
+            name: `NFT #${ownedTokenIds[index].toString()}`, 
+            description: 'Metadata unavailable', 
+            image: '/placeholder-nft.svg' 
+          });
+        }
+        
+        // Handle IPFS URIs correctly
+        let fetchUri = uri;
+        if (uri.startsWith('ipfs://')) {
+          fetchUri = uri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+        }
+        
+        // Try multiple IPFS gateways if one fails
+        const tryFetch = async (uri: string, retries = 0): Promise<any> => {
+          const gateways = [
+            '', // original URL
+            'https://ipfs.io/ipfs/', 
+            'https://gateway.pinata.cloud/ipfs/',
+            'https://cloudflare-ipfs.com/ipfs/'
+          ];
+          
+          // If we've tried all gateways, return default
+          if (retries >= gateways.length) {
+            console.warn(`Failed to fetch metadata after trying all gateways: ${uri}`);
+            return { 
+              name: `NFT #${ownedTokenIds[index].toString()}`, 
+              description: 'Metadata unavailable', 
+              image: '/placeholder-nft.svg' 
+            };
+          }
+          
+          let currentUri = uri;
+          // If we're retrying with a different gateway and it's an IPFS hash
+          if (retries > 0 && uri.includes('/ipfs/')) {
+            const ipfsHash = uri.split('/ipfs/').pop();
+            currentUri = ipfsHash ? `${gateways[retries]}${ipfsHash}` : uri;
+          }
+          
+          try {
+            const res = await fetch(currentUri, { method: 'GET' });
+            if (!res.ok) {
+              throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            return await res.json();
+          } catch (error) {
+            console.warn(`Gateway ${retries} failed for ${currentUri}:`, error);
+            return tryFetch(uri, retries + 1);
+          }
+        };
+        
+        return tryFetch(fetchUri)
+          .catch(error => {
+            console.error(`Final error fetching metadata for token ${ownedTokenIds[index]}:`, error);
+            return { 
+              name: `NFT #${ownedTokenIds[index].toString()}`, 
+              description: 'Metadata unavailable', 
+              image: '/placeholder-nft.svg' 
+            };
+          });
+      });
       
       const metadataResults = await Promise.all(metadataPromises);
       console.log("Fetched all metadata");

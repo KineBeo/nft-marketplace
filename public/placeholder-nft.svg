@@ -1,0 +1,6 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="300" fill="#F0F0F0"/>
+  <path opacity="0.5" d="M150 60C99.2487 60 58 101.249 58 152C58 202.751 99.2487 244 150 244C200.751 244 242 202.751 242 152C242 101.249 200.751 60 150 60ZM150 224C110.294 224 78 191.706 78 152C78 112.294 110.294 80 150 80C189.706 80 222 112.294 222 152C222 191.706 189.706 224 150 224Z" fill="#CCCCCC"/>
+  <path opacity="0.7" d="M150 110C127.909 110 110 127.909 110 150C110 172.091 127.909 190 150 190C172.091 190 190 172.091 190 150C190 127.909 172.091 110 150 110Z" fill="#AAAAAA"/>
+  <text x="150" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">NFT Unavailable</text>
+</svg> 

@@ -176,7 +176,7 @@ export function ExpandableNFTCard({ nft, onBuy, onList, onUnlist }: ExpandableNF
   }, []);
 
   // Fallback image when the NFT image fails to load
-  const fallbackImage = "https://placehold.co/400x400/f3f4f6/9ca3af?text=NFT";
+  const fallbackImage = "/placeholder-nft.svg";
 
   // Determine image source with error handling
   const imageSrc = useMemo(() => 
